@@ -69,7 +69,9 @@ void user_sync_a_slave_handler
     void* o_data
 )
 {
-    // Do nothing
+    // Cache our key down counter for our visualisation
+    uint8_t const* const src_keydown_counter = (uint8_t const*) i_data;
+    key_down_counter = *src_keydown_counter;
 }
 
 //! @brief Called after the keyboard firmware has been initialised
