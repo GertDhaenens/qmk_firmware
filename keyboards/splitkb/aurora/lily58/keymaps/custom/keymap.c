@@ -20,6 +20,13 @@
 //! @brief The counter to indicate how many keys are currently down
 uint8_t key_down_counter;
 
+//! @{
+//! @brief Extern functions from our base implementations
+extern void render_layer_state( void );
+extern void render_mod_status_gui_alt( uint8_t modifiers );
+extern void render_mod_status_ctrl_shift( uint8_t modifiers );
+//! @}
+
 //! @brief The various layers of our keyboard layout
 enum layers {
     LAYER_DEFAULT = 0,
@@ -60,8 +67,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     )
 };
 
-//! @brief The data for our pomudachi in on mode (mouth open)
-char const PROGMEM pomudachi_on[] = {
+//! @brief The data for our pomudachi in off mode (mouth closed)
+char const PROGMEM pomudachi_off[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x09, 0x91, 0x52, 0x54,
     0x78, 0x54, 0x92, 0x11, 0x09, 0x0D, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0x00, 0x00, 0x00,
@@ -72,8 +79,8 @@ char const PROGMEM pomudachi_on[] = {
     0x18, 0x18, 0x78, 0x88, 0xB8, 0xAC, 0xEC, 0x46, 0x02, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
-//! @brief The data for our pomudachi in off mode (mouth closed)
-char const PROGMEM pomudachi_off[] = {
+//! @brief The data for our pomudachi in on mode (mouth open)
+char const PROGMEM pomudachi_on[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x09, 0x91, 0x52, 0x54,
     0x78, 0x54, 0x92, 0x11, 0x09, 0x0D, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0x00, 0x00, 0x00,
@@ -99,6 +106,15 @@ void render_pomudachi( void )
     }
 }
 
+//! @brief Render the WPM of our keyboard
+void render_wpm( void )
+{
+    oled_write_ln_P( PSTR( " WPM:" ), false );
+    oled_write_P( PSTR( " " ), false );
+    oled_write_P( get_u8_str( get_current_wpm(), '0' ), false );
+    oled_write_ln_P( PSTR( "" ), false );
+}
+
 //! @brief Function to process the key presses
 bool process_record_user
 (
@@ -122,6 +138,19 @@ bool process_record_user
     }
 
     return true;
+}
+
+//! @brief Function to process the OLED rendering
+bool oled_task_user( void ) {
+
+    render_pomudachi();
+    render_wpm();
+    render_layer_state();
+    render_mod_status_gui_alt(get_mods()|get_oneshot_mods());
+    render_mod_status_ctrl_shift(get_mods()|get_oneshot_mods());
+
+    // We override the entire oled rendering
+    return false;
 }
 
 //! @brief Our RPC handling function from the slave side of the keyboard

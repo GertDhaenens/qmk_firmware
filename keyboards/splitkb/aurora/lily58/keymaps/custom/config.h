@@ -26,3 +26,10 @@
 //! @details This means that the shift key in our keymap retains even after we've released
 //! so that we don't have to guarantee that it remains down before we trigger our keybind
 #define HOLD_ON_OTHER_KEY_PRESS
+
+//! @{
+//! @brief Allow the transfer of info between master and slave controller
+#define SPLIT_LAYER_STATE_ENABLE
+#define SPLIT_MODS_ENABLE
+#define SPLIT_WPM_ENABLE
+//! @}
