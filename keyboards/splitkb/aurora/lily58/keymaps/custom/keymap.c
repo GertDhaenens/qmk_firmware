@@ -84,9 +84,10 @@ char const PROGMEM pomudachi_off[] = {
     0x19, 0x18, 0x78, 0x88, 0xB8, 0xAC, 0xEC, 0x46, 0x02, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
+//! @brief Render our pomudachi artwork based on our key counter state
 void render_pomudachi( void )
 {
-    if(key_down_counter > 0u)
+    if( key_down_counter > 0u )
     {
         oled_write_raw_P( pomudachi_on, sizeof( pomudachi_on ) );
         oled_set_cursor( 0, 5 );

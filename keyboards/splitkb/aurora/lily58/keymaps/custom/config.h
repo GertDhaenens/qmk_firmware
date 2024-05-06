@@ -18,3 +18,11 @@
 
 //! @brief The various users that we support for RPC
 #define SPLIT_TRANSACTION_IDS_USER USER_SYNC_A
+
+//! @brief Set our tapping term to be 300ms
+#define TAPPING_TERM 300
+
+//! @brief Allow the hold-per-key functionality since we are a fast typer
+//! @details This means that the shift key in our keymap retains even after we've released
+//! so that we don't have to guarantee that it remains down before we trigger our keybind
+#define HOLD_ON_OTHER_KEY_PRESS
