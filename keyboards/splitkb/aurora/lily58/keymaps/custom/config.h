@@ -16,4 +16,5 @@
 
 #pragma once
 
+//! @brief The various users that we support for RPC
 #define SPLIT_TRANSACTION_IDS_USER USER_SYNC_A

@@ -61,7 +61,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 //! @brief The data for our pomudachi in on mode (mouth open)
-const uint8_t PROGMEM pomudachi_on[] = {
+char const PROGMEM pomudachi_on[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x09, 0x91, 0x52, 0x54,
     0x78, 0x54, 0x92, 0x11, 0x09, 0x0D, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0x00, 0x00, 0x00,
@@ -73,7 +73,7 @@ const uint8_t PROGMEM pomudachi_on[] = {
 };
 
 //! @brief The data for our pomudachi in off mode (mouth closed)
-const uint8_t PROGMEM pomudachi_off[] = {
+char const PROGMEM pomudachi_off[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x09, 0x91, 0x52, 0x54,
     0x78, 0x54, 0x92, 0x11, 0x09, 0x0D, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0x00, 0x00, 0x00,
@@ -84,17 +84,56 @@ const uint8_t PROGMEM pomudachi_off[] = {
     0x19, 0x18, 0x78, 0x88, 0xB8, 0xAC, 0xEC, 0x46, 0x02, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
+void render_pomudachi( void )
+{
+    if(key_down_counter > 0u)
+    {
+        oled_write_raw_P( pomudachi_on, sizeof( pomudachi_on ) );
+        oled_set_cursor( 0, 5 );
+    }
+    else
+    {
+        oled_write_raw_P( pomudachi_off, sizeof( pomudachi_off ) );
+        oled_set_cursor( 0, 5 );
+    }
+}
+
+//! @brief Function to process the key presses
+bool process_record_user
+(
+    uint16_t keycode,
+    keyrecord_t* record
+)
+{
+    if( record->event.type == KEY_EVENT )
+    {
+        if( record->event.pressed )
+        {
+            ++key_down_counter;
+        }
+        else
+        {
+            if( key_down_counter > 0u )
+            {
+                --key_down_counter;
+            }
+        }
+    }
+
+    return true;
+}
+
 //! @brief Our RPC handling function from the slave side of the keyboard
 void user_sync_a_slave_handler
 (
-    uint8_t i_buflen,
-    void const* i_data,
-    uint8_t o_buflen,
-    void* o_data
+    uint8_t in_buflen,
+    void const* in_data,
+    uint8_t out_buflen,
+    void* out_data
 )
 {
     // Cache our key down counter for our visualisation
-    uint8_t const* const src_keydown_counter = (uint8_t const*) i_data;
+    uint8_t const* const src_keydown_counter = (uint8_t const*) in_data;
     key_down_counter = *src_keydown_counter;
 }
 
