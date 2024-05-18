@@ -16,7 +16,7 @@
 #include QMK_KEYBOARD_H
 
 //! @brief The layers that our keyboard supports
-enum Layers {
+enum layers {
     _BASE = 0,
     _SYMBOLS = 1,
     _NUMBERS = 2,
@@ -162,7 +162,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 //     ),
 };
 
-#if 0
 //! @brief The callback for rendering the OLED
 bool oled_task_user( void )
 {
@@ -176,7 +175,7 @@ bool oled_task_user( void )
 #endif
 
     oled_write_P(PSTR("Layer: "), false);
-    switch (get_highest_layer(layer_state | default_layer_state)) {
+    switch (get_highest_layer(layer_state | default_layer_state))
     {
         case _BASE:
             oled_write_P(PSTR("Base\n"), false);
@@ -184,9 +183,17 @@ bool oled_task_user( void )
         case _SYMBOLS:
             oled_write_P(PSTR("Symbols\n"), false);
             break;
+        case _NUMBERS:
+            oled_write_P(PSTR("Numbers\n"), false);
+            break;
+        case _NAVIGATE:
+            oled_write_P(PSTR("Navigate\n"), false);
+            break;
+        case _FUNCTION:
+            oled_write_P(PSTR("Function\n"), false);
+            break;
     }
 
     // We override the default OLED rendering
     return false;
 }
-#endif
