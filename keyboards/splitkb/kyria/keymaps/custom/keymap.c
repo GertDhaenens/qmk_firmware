@@ -162,6 +162,25 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 //     ),
 };
 
+//! @brief Callback for when the keyboard has finished initialising
+void keyboard_post_init_user( void )
+{
+    // Set the initial values for all of our leds
+    rgblight_sethsv( RGBLIGHT_DEFAULT_HUE, RGBLIGHT_DEFAULT_SAT, RGBLIGHT_DEFAULT_VAL );
+
+    // Flush our led state
+    rgblight_set();
+}
+
+//! @brief Write a label and number to the screen
+void oled_write_label_u8( char const* label, uint8_t value )
+{
+    oled_write_P( label, false );
+    oled_write_P( PSTR( ":" ), false );
+    oled_write_P( PSTR( get_u8_str( value, '0' ) ), false );
+    oled_write_P( PSTR( "\n" ), false );
+}
+
 //! @brief The callback for rendering the OLED
 bool oled_task_user( void )
 {
@@ -193,6 +212,10 @@ bool oled_task_user( void )
             oled_write_P(PSTR("Function\n"), false);
             break;
     }
+
+    oled_write_label_u8( PSTR( "H" ), rgblight_get_hue() );
+    oled_write_label_u8( PSTR( "S" ), rgblight_get_sat() );
+    oled_write_label_u8( PSTR( "V" ), rgblight_get_val() );
 
     // We override the default OLED rendering
     return false;

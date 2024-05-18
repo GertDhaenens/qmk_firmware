@@ -16,24 +16,21 @@
 
 #pragma once
 
-#ifdef RGBLIGHT_ENABLE
-#    define RGBLIGHT_EFFECT_BREATHING
-#    define RGBLIGHT_EFFECT_RAINBOW_MOOD
-#    define RGBLIGHT_EFFECT_RAINBOW_SWIRL
-#    define RGBLIGHT_EFFECT_SNAKE
-#    define RGBLIGHT_EFFECT_KNIGHT
-#    define RGBLIGHT_EFFECT_CHRISTMAS
-#    define RGBLIGHT_EFFECT_STATIC_GRADIENT
-#    define RGBLIGHT_EFFECT_RGB_TEST
-#    define RGBLIGHT_EFFECT_ALTERNATING
-#    define RGBLIGHT_EFFECT_TWINKLE
-#    define RGBLIGHT_HUE_STEP 8
-#    define RGBLIGHT_SAT_STEP 8
-#    define RGBLIGHT_VAL_STEP 8
-#    ifndef RGBLIGHT_LIMIT_VAL
-#    	define RGBLIGHT_LIMIT_VAL 150
-#    endif
-#endif
+// Undefine existing values
+#undef RGBLIGHT_LED_COUNT
+#undef RGBLED_SPLIT
+
+// Our version only has 12 LED on the board
+#define RGBLIGHT_LED_COUNT 12
+#define RGBLED_SPLIT { 6, 6 }
+
+// Turn on our underglow by default
+#define RGBLIGHT_DEFAULT_ON     true
+
+// Set our default HSV value (lavender)
+#define RGBLIGHT_DEFAULT_HUE    216u
+#define RGBLIGHT_DEFAULT_SAT    153u
+#define RGBLIGHT_DEFAULT_VAL     94u
 
 // Enable Caps Word by double tapping left shift
 #define DOUBLE_TAP_SHIFT_TURNS_ON_CAPS_WORD
