@@ -66,6 +66,26 @@ math_saturate
 
 //-----------------------------------------------------------------------
 float
+math_ceil
+(
+    float const i_a
+)
+{
+    return ceil( i_a );
+}
+
+//-----------------------------------------------------------------------
+float
+math_floor
+(
+    float const i_a
+)
+{
+    return floor( i_a );
+}
+
+//-----------------------------------------------------------------------
+float
 math_degrees_to_radians
 (
     float const i_degrees

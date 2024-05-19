@@ -62,6 +62,22 @@ math_saturate
     float const i_a
 );
 
+//! @brief Round a value down
+//! @param i_a The value to clamp
+float
+math_floor
+(
+    float const i_a
+);
+
+//! @brief Round a value up
+//! @param i_a The value to clamp
+float
+math_ceil
+(
+    float const i_a
+);
+
 //! @brief Convert degrees to radians
 //! @param i_degrees The value to convert
 float

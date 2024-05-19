@@ -5,9 +5,10 @@
 #include "math/matrix.h"
 
 //-----------------------------------------------------------------------
-uint8_t pixel_buffer[ RENDER_DISPLAY_WIDTH * RENDER_DISPLAY_HEIGHT / 8u ];
-float rotation_state;
-uint16_t delta_timer;
+uint8_t pixelBuffer[ RENDER_DISPLAY_WIDTH * RENDER_DISPLAY_HEIGHT / 8u ];
+float rotationState;
+uint16_t deltaTimer;
+Mat4x4f viewProjection;
 
 //-----------------------------------------------------------------------
 static inline
@@ -22,7 +23,7 @@ render_display_get_base_ptr
     uint16_t const my = y / 8u;
     uint16_t const address = my * RENDER_DISPLAY_WIDTH + mx;
 
-    return pixel_buffer + address;
+    return pixelBuffer + address;
 }
 
 //-----------------------------------------------------------------------
@@ -71,7 +72,7 @@ render_display_clear
     void
 )
 {
-    memset( pixel_buffer, 0u, RENDER_DISPLAY_WIDTH * RENDER_DISPLAY_HEIGHT / 8u );
+    memset( pixelBuffer, 0u, RENDER_DISPLAY_WIDTH * RENDER_DISPLAY_HEIGHT / 8u );
 }
 
 //-----------------------------------------------------------------------
@@ -89,7 +90,9 @@ render_display_draw_line
     // Vertical line
     if( dx == 0 )
     {
-        for( uint32_t y = p0.y; y < p1.y; ++y )
+        uint32_t const by = (uint32_t) math_floor( p0.y );
+        uint32_t const ey = (uint32_t) math_ceil( p1.y );
+        for( uint32_t y = by; y < ey; ++y )
         {
             render_display_set_pixel( p0.x, y, true );
         }
@@ -97,7 +100,9 @@ render_display_draw_line
     // Horizontal line
     else if( dy == 0 )
     {
-        for( uint32_t x = p0.x; x < p1.x; ++x )
+        uint32_t const bx = (uint32_t) math_floor( p0.x );
+        uint32_t const ex = (uint32_t) math_ceil( p1.x );
+        for( uint32_t x = bx; x < ex; ++x )
         {
             render_display_set_pixel( x, p0.y, true );
         }
@@ -145,38 +150,10 @@ render_display_init
     render_display_clear();
 
     // Initialise our state
-    rotation_state = 0.0f;
-    delta_timer = timer_read();
-}
+    rotationState = 0.0f;
+    deltaTimer = timer_read();
 
-//-----------------------------------------------------------------------
-char const*
-render_display_get_buffer
-(
-    void
-)
-{
-    return (char const*) pixel_buffer;
-}
-
-//-----------------------------------------------------------------------
-void
-render_display_update
-(
-    void
-)
-{
-    // Clear our existing display
-    render_display_clear();
-
-    // Advance our state
-    uint16_t const deltaTime = timer_elapsed(delta_timer);
-    float const deltaTimeInSec = (float) deltaTime / 1000.0f;
-    delta_timer = timer_read();
-    float const speedPerWPM = 0.1f;
-    rotation_state += speedPerWPM * deltaTimeInSec * get_current_wpm();
-
-    // Calculate our matrices
+    // Cache some values that don't change
     Mat4x4f const view = mat4x4f_lookat_lh
     (
         vec3f( 0.0f, 0.0f, -2.0f ),
@@ -190,10 +167,46 @@ render_display_update
         0.001f, // i_nearPlane
         10.0f // i_farPlane
     );
-    Mat4x4f const viewProjection = mat4x4f_mul( view, projection );
+    viewProjection = mat4x4f_mul( view, projection );
+}
+
+//-----------------------------------------------------------------------
+char const*
+render_display_get_buffer
+(
+    void
+)
+{
+    return (char const*) pixelBuffer;
+}
+
+//-----------------------------------------------------------------------
+void
+render_display_update
+(
+    void
+)
+{
+    // Only update our buffer if our wpm is greater than zero
+    // if it's zero, our animation doesn't change so there's no point updating it
+    uint8_t const wpm = get_current_wpm();
+    if( wpm == 0u )
+    {
+        return;
+    }
+
+    // Clear our existing display
+    render_display_clear();
+
+    // Advance our state
+    uint16_t const deltaTime = timer_elapsed(deltaTimer);
+    float const deltaTimeInSec = (float) deltaTime / 1000.0f;
+    deltaTimer = timer_read();
+    float const speedPerWPM = 0.1f;
+    rotationState += speedPerWPM * deltaTimeInSec * (float) wpm;
 
     // Calculate our rotation matrix
-    Mat3x3f const rotation = mat3x3f_rotate_x( rotation_state );
+    Mat3x3f const rotation = mat3x3f_rotate_x( rotationState );
 
     // Calculate our 8 corner points in NDC coordinates
     //    4----------5
