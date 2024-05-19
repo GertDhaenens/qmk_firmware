@@ -218,9 +218,9 @@ bool oled_task_user( void )
     uint16_t const columnOffset = ( RENDER_DISPLAY_WIDTH + OLED_FONT_WIDTH - 1 ) / OLED_FONT_WIDTH;
     uint16_t lineOffset = 0u;
 
+    // Layer
     oled_set_cursor( columnOffset, lineOffset++ );
     oled_write_P(PSTR("Layer: "), false);
-
     oled_set_cursor( columnOffset, lineOffset++ );
     switch (get_highest_layer(layer_state | default_layer_state))
     {
@@ -240,6 +240,10 @@ bool oled_task_user( void )
             oled_write_P(PSTR("Function"), false);
             break;
     }
+
+    // WPM
+    oled_set_cursor( columnOffset, lineOffset++ );
+    oled_write_label_u8( PSTR( "WPM" ), get_current_wpm() );
 
     // We override the default OLED rendering
     return false;

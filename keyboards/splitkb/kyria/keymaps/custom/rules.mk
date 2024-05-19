@@ -17,6 +17,9 @@ CONVERT_TO = liatris
 # https://github.com/qmk/qmk_firmware/blob/master/docs/feature_caps_word.md
 CAPS_WORD_ENABLE = yes
 
+# Enable the WPM feature for our spinning cube
+WPM_ENABLE = yes
+
 # Add our extra source files
 SRC += render_display.c \
 	   math/math.c

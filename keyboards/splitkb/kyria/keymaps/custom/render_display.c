@@ -173,7 +173,8 @@ render_display_update
     uint16_t const deltaTime = timer_elapsed(delta_timer);
     float const deltaTimeInSec = (float) deltaTime / 1000.0f;
     delta_timer = timer_read();
-    rotation_state += 1.0f * deltaTimeInSec;
+    float const speedPerWPM = 0.1f;
+    rotation_state += speedPerWPM * deltaTimeInSec * get_current_wpm();
 
     // Calculate our matrices
     Mat4x4f const view = mat4x4f_lookat_lh
