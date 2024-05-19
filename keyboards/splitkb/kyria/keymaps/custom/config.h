@@ -41,6 +41,3 @@
 
 // Set our tapping toggle (for TT commands) to only two taps (default five)
 #define TAPPING_TOGGLE 2
-
-// Reduce our tapping term to only 100ms since we are a fast typer
-#define TAPPING_TERM 100
