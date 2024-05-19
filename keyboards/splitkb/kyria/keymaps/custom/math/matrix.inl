@@ -258,6 +258,21 @@ mat3x3f_rotate_x
         .z = { .x = 0.0f, .y = +s, .z = +c },
     };
 }
+//-----------------------------------------------------------------------
+Mat4x4f
+mat4x4f_affine
+(
+    Mat3x3f const i_rotation,
+    Vec3f const i_position
+)
+{
+    return (Mat4x4f) {
+        .x = { .x = i_rotation.x.x, .y = i_rotation.x.y, .z = i_rotation.x.z, .w = 0.0f },
+        .y = { .x = i_rotation.y.x, .y = i_rotation.y.y, .z = i_rotation.y.z, .w = 0.0f },
+        .z = { .x = i_rotation.z.x, .y = i_rotation.z.y, .z = i_rotation.z.z, .w = 0.0f },
+        .w = { .x = i_position.x, .y = i_position.y, .z = i_position.z, .w = 1.0f },
+    };
+}
 
 //-----------------------------------------------------------------------
 Mat4x4f

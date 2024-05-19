@@ -207,6 +207,8 @@ render_display_update
 
     // Calculate our rotation matrix
     Mat3x3f const rotation = mat3x3f_rotate_x( rotationState );
+    Mat4x4f const rotation4 = mat4x4f_affine( rotation, vec3f_zero() );
+    Mat4x4f const matrix = mat4x4f_mul( rotation4, viewProjection );
 
     // Calculate our 8 corner points in NDC coordinates
     //    4----------5
@@ -220,14 +222,14 @@ render_display_update
     float const s = 0.5f;
     Vec3f const cornerPoints[] =
     {
-        mat4x4f_transform_position( viewProjection, mat3x3f_mul_vec( vec3f( -s, +s, -s ), rotation ) ),
-        mat4x4f_transform_position( viewProjection, mat3x3f_mul_vec( vec3f( +s, +s, -s ), rotation ) ),
-        mat4x4f_transform_position( viewProjection, mat3x3f_mul_vec( vec3f( -s, -s, -s ), rotation ) ),
-        mat4x4f_transform_position( viewProjection, mat3x3f_mul_vec( vec3f( +s, -s, -s ), rotation ) ),
-        mat4x4f_transform_position( viewProjection, mat3x3f_mul_vec( vec3f( -s, +s, +s ), rotation ) ),
-        mat4x4f_transform_position( viewProjection, mat3x3f_mul_vec( vec3f( +s, +s, +s ), rotation ) ),
-        mat4x4f_transform_position( viewProjection, mat3x3f_mul_vec( vec3f( -s, -s, +s ), rotation ) ),
-        mat4x4f_transform_position( viewProjection, mat3x3f_mul_vec( vec3f( +s, -s, +s ), rotation ) ),
+        mat4x4f_transform_position( matrix, vec3f( -s, +s, -s ) ),
+        mat4x4f_transform_position( matrix, vec3f( +s, +s, -s ) ),
+        mat4x4f_transform_position( matrix, vec3f( -s, -s, -s ) ),
+        mat4x4f_transform_position( matrix, vec3f( +s, -s, -s ) ),
+        mat4x4f_transform_position( matrix, vec3f( -s, +s, +s ) ),
+        mat4x4f_transform_position( matrix, vec3f( +s, +s, +s ) ),
+        mat4x4f_transform_position( matrix, vec3f( -s, -s, +s ) ),
+        mat4x4f_transform_position( matrix, vec3f( +s, -s, +s ) ),
     };
 
     // Calculate our pixel coordinates based on our NDC positions
