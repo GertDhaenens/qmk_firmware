@@ -11,3 +11,6 @@ void render_display_init( void );
 
 //! @brief Get the buffer of data to render to the display
 char const* render_display_get_buffer( void );
+
+//! @brief Update our display and advance the rendering
+void render_display_update( void );

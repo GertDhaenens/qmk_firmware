@@ -18,4 +18,5 @@ CONVERT_TO = liatris
 CAPS_WORD_ENABLE = yes
 
 # Add our extra source files
-SRC += render_display.c
+SRC += render_display.c \
+	   math/math.c
