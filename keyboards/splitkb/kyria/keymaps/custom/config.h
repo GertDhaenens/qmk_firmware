@@ -34,3 +34,7 @@
 
 // Enable Caps Word by double tapping left shift
 #define DOUBLE_TAP_SHIFT_TURNS_ON_CAPS_WORD
+
+// Sync certain state between our two sides
+#define SPLIT_LAYER_STATE_ENABLE
+#define SPLIT_WPM_ENABLE
