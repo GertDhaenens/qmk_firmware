@@ -15,6 +15,8 @@
  */
 #include QMK_KEYBOARD_H
 
+#include "render_display.h"
+
 //! @brief The layers that our keyboard supports
 enum layers {
     _BASE = 0,
@@ -170,6 +172,9 @@ void keyboard_post_init_user( void )
 
     // Flush our led state
     rgblight_set();
+
+    // Initialise our rendering display
+    render_display_init();
 }
 
 //! @brief Write a label and number to the screen
@@ -184,38 +189,54 @@ void oled_write_label_u8( char const* label, uint8_t value )
 //! @brief The callback for rendering the OLED
 bool oled_task_user( void )
 {
-    oled_write_P(PSTR("Kyria "), false);
-#if defined(KEYBOARD_splitkb_kyria_rev1)
-        oled_write_P(PSTR("rev1\n\n"), false);
-#elif defined(KEYBOARD_splitkb_kyria_rev2)
-        oled_write_P(PSTR("rev2\n\n"), false);
-#elif defined(KEYBOARD_splitkb_kyria_rev3)
-        oled_write_P(PSTR("rev3\n\n"), false);
-#endif
+    // Clear all previous rendering
+    oled_clear();
 
+    // Render our custom image on the left side of the screen
+    // This image is 64x64 on our 128x64 display so takes up the entire left side
+    // The memory in the buffer is aligned in the same way as our display, so we can
+    // safely send the data to our oled driver one line at a time
+    char const* const imageMemory = render_display_get_buffer();
+    for( uint16_t y = 0u; y < OLED_DISPLAY_HEIGHT; y += 8u )
+    {
+        uint16_t const srcLineAddress = y * RENDER_DISPLAY_WIDTH / 8u;
+        uint16_t const destLineAddress = y * OLED_DISPLAY_WIDTH / 8u;
+
+        for( uint16_t x = 0u; x < RENDER_DISPLAY_WIDTH; ++x )
+        {
+            uint16_t const srcAddress = srcLineAddress + x;
+            uint16_t const destAddress = destLineAddress + x;
+
+            oled_write_raw_byte( imageMemory[ srcAddress ], destAddress );
+        }
+    }
+
+    // Render our other information - we start each line next to our image
+    uint16_t const columnOffset = ( RENDER_DISPLAY_WIDTH + OLED_FONT_WIDTH - 1 ) / OLED_FONT_WIDTH;
+    uint16_t lineOffset = 0u;
+
+    oled_set_cursor( columnOffset, lineOffset++ );
     oled_write_P(PSTR("Layer: "), false);
+
+    oled_set_cursor( columnOffset, lineOffset++ );
     switch (get_highest_layer(layer_state | default_layer_state))
     {
         case _BASE:
-            oled_write_P(PSTR("Base\n"), false);
+            oled_write_P(PSTR("Base"), false);
             break;
         case _SYMBOLS:
-            oled_write_P(PSTR("Symbols\n"), false);
+            oled_write_P(PSTR("Symbols"), false);
             break;
         case _NUMBERS:
-            oled_write_P(PSTR("Numbers\n"), false);
+            oled_write_P(PSTR("Numbers"), false);
             break;
         case _NAVIGATE:
-            oled_write_P(PSTR("Navigate\n"), false);
+            oled_write_P(PSTR("Navigate"), false);
             break;
         case _FUNCTION:
-            oled_write_P(PSTR("Function\n"), false);
+            oled_write_P(PSTR("Function"), false);
             break;
     }
-
-    oled_write_label_u8( PSTR( "H" ), rgblight_get_hue() );
-    oled_write_label_u8( PSTR( "S" ), rgblight_get_sat() );
-    oled_write_label_u8( PSTR( "V" ), rgblight_get_val() );
 
     // We override the default OLED rendering
     return false;

@@ -16,3 +16,6 @@ CONVERT_TO = liatris
 # Enable Caps Word
 # https://github.com/qmk/qmk_firmware/blob/master/docs/feature_caps_word.md
 CAPS_WORD_ENABLE = yes
+
+# Add our extra source files
+SRC += render_display.c
