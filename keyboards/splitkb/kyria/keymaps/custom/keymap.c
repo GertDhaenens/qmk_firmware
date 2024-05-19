@@ -195,28 +195,16 @@ bool oled_task_user( void )
     // Clear all previous rendering
     oled_clear();
 
-    // Render our custom image on the left side of the screen
-    // This image is 64x64 on our 128x64 display so takes up the entire left side
-    // The memory in the buffer is aligned in the same way as our display, so we can
-    // safely send the data to our oled driver one line at a time
-    char const* const imageMemory = render_display_get_buffer();
-    for( uint16_t y = 0u; y < OLED_DISPLAY_HEIGHT; y += 8u )
-    {
-        uint16_t const srcLineAddress = y * RENDER_DISPLAY_WIDTH / 8u;
-        uint16_t const destLineAddress = y * OLED_DISPLAY_WIDTH / 8u;
+    // Calculate our offsets based on if we're left or right split
+    // The left split wants to render our image on the left and text on the right
+    // While the right split wants to render our text on the left and image on the right
+    uint8_t const textColumnCount = ( RENDER_DISPLAY_WIDTH + OLED_FONT_WIDTH - 1 ) / OLED_FONT_WIDTH;
+    uint8_t const imageOffset = ( is_keyboard_left() ) ? 0u : ( textColumnCount * OLED_FONT_WIDTH );
+    uint8_t const columnOffset = ( is_keyboard_left() ) ? textColumnCount : 2u;
 
-        for( uint16_t x = 0u; x < RENDER_DISPLAY_WIDTH; ++x )
-        {
-            uint16_t const srcAddress = srcLineAddress + x;
-            uint16_t const destAddress = destLineAddress + x;
-
-            oled_write_raw_byte( imageMemory[ srcAddress ], destAddress );
-        }
-    }
-
-    // Render our other information - we start each line next to our image
-    uint16_t const columnOffset = ( RENDER_DISPLAY_WIDTH + OLED_FONT_WIDTH - 1 ) / OLED_FONT_WIDTH;
-    uint16_t lineOffset = 0u;
+    // We manually keep track of our line and set the cursor in order to not overwrite our image
+    // We start a couple of lines down in order to make it look a bit nicer
+    uint16_t lineOffset = 2u;
 
     // Layer
     oled_set_cursor( columnOffset, lineOffset++ );
@@ -244,6 +232,25 @@ bool oled_task_user( void )
     // WPM
     oled_set_cursor( columnOffset, lineOffset++ );
     oled_write_label_u8( PSTR( "WPM" ), get_current_wpm() );
+
+    // Manually render our image after our labels since some of them render blank lines
+    // This image is 64x64 on our 128x64 display so takes up the entire left side
+    // The memory in the buffer is aligned in the same way as our display, so we can
+    // safely send the data to our oled driver one line at a time
+    char const* const imageMemory = render_display_get_buffer();
+    for( uint16_t y = 0u; y < OLED_DISPLAY_HEIGHT; y += 8u )
+    {
+        uint16_t const srcLineAddress = y * RENDER_DISPLAY_WIDTH / 8u;
+        uint16_t const destLineAddress = y * OLED_DISPLAY_WIDTH / 8u;
+
+        for( uint16_t x = 0u; x < RENDER_DISPLAY_WIDTH; ++x )
+        {
+            uint16_t const srcAddress = srcLineAddress + x;
+            uint16_t const destAddress = imageOffset + destLineAddress + x;
+
+            oled_write_raw_byte( imageMemory[ srcAddress ], destAddress );
+        }
+    }
 
     // We override the default OLED rendering
     return false;
