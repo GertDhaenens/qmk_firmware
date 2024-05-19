@@ -95,6 +95,15 @@ mat3x3f_rotate_x
     float const i_angleInRadians
 );
 
+//! @brief Create an affine matrix from a 3x3 matrix and position
+static inline
+Mat4x4f
+mat4x4f_affine
+(
+    Mat3x3f const i_rotation,
+    Vec3f const i_position
+);
+
 //! @brief Calculate a view matrix for a left-handed coordinate system
 //! @param i_position The position we are looking from
 //! @param i_direction The direction we are looking into
