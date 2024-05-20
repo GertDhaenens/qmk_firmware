@@ -18,21 +18,54 @@
 #include "render_display.h"
 
 //! @brief The layers that our keyboard supports
-enum layers {
+typedef enum {
     _BASE = 0,
-    _SYMBOLS = 1,
-    _NUMBERS = 2,
-    _NAVIGATE = 3,
-    _FUNCTION = 4,
-    _MEDIA = 5,
+    _SYMBOLS,
+    _NUMBERS,
+    _NUMBERS_PERM,
+    _NAVIGATE,
+    _NAVIGATE_PERM,
+    _FUNCTION,
+    _MEDIA,
+} layers_e;
+
+//! @brief The various tap dances we support
+typedef enum {
+    TD_NUMBERS = 0,
+    TD_NAVIGATE,
+} tap_dances_e;
+
+//! @brief The various states a tap dance can be in
+typedef enum {
+    TDPS_NONE,
+    TDPS_HOLD,
+    TDPS_DOUBLE_TAP,
+} tap_dance_press_state_e ;
+
+typedef struct {
+    tap_dance_press_state_e pressState;
+    uint8_t holdLayer;
+    uint8_t permLayer;
+} tap_dance_press_state_t;
+
+//! @brief The active states of our tap dance
+static tap_dance_press_state_t tap_dance_states[] = {
+    { TDPS_NONE, _NUMBERS, _NUMBERS_PERM },
+    { TDPS_NONE, _NAVIGATE, _NAVIGATE_PERM },
 };
+
+#define ACTION_TAP_DANCE_LAYER( _TapDance ) \
+    { \
+        .fn = { NULL, tap_dance_finished, tap_dance_reset }, \
+        .user_data = &tap_dance_states[ _TapDance ] \
+    }
 
 //! @{
 //! @brief Layer Switching
 #define BASE        TO( _BASE )
 #define SYMBOLS     MO( _SYMBOLS )
-#define NUMBERS     TT( _NUMBERS )
-#define NAVIGAT     TT( _NAVIGATE )
+#define NUMBERS     TD( TD_NUMBERS )
+#define NAVIGAT     TD( TD_NAVIGATE )
 #define FUNCTIO     MO( _FUNCTION )
 #define MEDIA       MO( _MEDIA )
 //! @}
@@ -42,6 +75,19 @@ enum layers {
 #define CTL_ESC     MT(MOD_LCTL, KC_ESC)
 #define CTL_QUO     MT(MOD_RCTL, KC_QUOTE)
 //! @}
+
+//! @{
+//! @brief Forward declarations of functions
+void tap_dance_finished( tap_dance_state_t* state, void* userData );
+void tap_dance_reset( tap_dance_state_t* state, void* userData );
+//! @}
+
+// clang-format off
+tap_dance_action_t tap_dance_actions[] = {
+    ACTION_TAP_DANCE_LAYER( TD_NUMBERS ),
+    ACTION_TAP_DANCE_LAYER( TD_NAVIGATE ),
+};
+// clang-format on
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -101,7 +147,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
     [_NUMBERS] = LAYOUT(
       KC_GRV , KC_1   , KC_2   , KC_3   , KC_4   , KC_5   ,                                     KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , KC_BSLS,
-      BASE   , _______, _______, _______, _______, _______,                                     KC_PLUS, KC_MINS, KC_LCBR, KC_LCBR, _______, _______,
+      _______, _______, _______, _______, _______, _______,                                     KC_PLUS, KC_MINS, KC_LCBR, KC_LCBR, _______, _______,
+      _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+                                 _______, _______, _______, _______, _______, _______, _______, _______, _______, _______
+    ),
+
+    [_NUMBERS_PERM] = LAYOUT(
+      _______, KC_1   , KC_2   , KC_3   , KC_4   , KC_5   ,                                     KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , KC_BSPC,
+      BASE   , _______, _______, _______, _______, _______,                                     _______, _______, _______, _______, _______, _______,
       _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
                                  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______
     ),
@@ -120,6 +173,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *                        `----------------------------------'  `----------------------------------'
  */
     [_NAVIGATE] = LAYOUT(
+      _______, _______, _______, _______, _______, _______,                                     _______, _______, _______, _______, _______, KC_DEL ,
+      _______, _______, _______, _______, _______, _______,                                     KC_LEFT, KC_DOWN, KC_UP  , KC_RGHT, _______, _______,
+      _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+                                 _______, _______, _______, _______, _______, _______, _______, _______, _______, _______
+    ),
+    [_NAVIGATE_PERM] = LAYOUT(
       _______, _______, _______, _______, _______, _______,                                     _______, _______, _______, _______, _______, KC_DEL ,
       BASE   , _______, _______, _______, _______, _______,                                     KC_LEFT, KC_DOWN, KC_UP  , KC_RGHT, _______, _______,
       _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
@@ -242,9 +301,11 @@ bool oled_task_user( void )
             oled_write_P(PSTR("Symbols"), false);
             break;
         case _NUMBERS:
+        case _NUMBERS_PERM:
             oled_write_P(PSTR("Numbers"), false);
             break;
         case _NAVIGATE:
+        case _NAVIGATE_PERM:
             oled_write_P(PSTR("Navigate"), false);
             break;
         case _FUNCTION:
@@ -280,4 +341,67 @@ bool oled_task_user( void )
 
     // We override the default OLED rendering
     return false;
+}
+
+//! @brief Callback for when a tap dance has finished
+void tap_dance_finished( tap_dance_state_t* state, void* userData )
+{
+    tap_dance_press_state_t* const pressState = (tap_dance_press_state_t*) userData;
+    if( state->count == 1u )
+    {
+        pressState->pressState = TDPS_HOLD;
+    }
+    else if( state->count == 2u )
+    {
+        pressState->pressState = TDPS_DOUBLE_TAP;
+    }
+    else
+    {
+        pressState->pressState = TDPS_NONE;
+    }
+
+    switch( pressState->pressState )
+    {
+        case TDPS_HOLD:
+            layer_on( pressState->holdLayer );
+            break;
+        case TDPS_DOUBLE_TAP:
+            layer_move( pressState->permLayer );
+            break;
+        case TDPS_NONE:
+            // Do nothing
+            break;
+    }
+}
+
+//! @brief Callback for when our tap dance has finished
+void tap_dance_reset( tap_dance_state_t* state, void* userData )
+{
+    tap_dance_press_state_t* const pressState = (tap_dance_press_state_t*) userData;
+
+    // If it was a single tap - turn off the layer
+    if( pressState->pressState == TDPS_HOLD )
+    {
+        layer_off( pressState->holdLayer );
+    }
+
+    // Reset the state
+    pressState->pressState = TDPS_NONE;
+}
+
+//! @brief Callback for when we switch layers
+layer_state_t layer_state_set_user( layer_state_t state )
+{
+    // Switch our RGB to indicate that we are in a permanent layer
+    if( layer_state_cmp( state, _NUMBERS_PERM ) || layer_state_cmp( state, _NAVIGATE_PERM ) )
+    {
+        rgblight_sethsv( HSV_WHITE );
+    }
+    // Else just use the default colour
+    else
+    {
+        rgblight_sethsv( RGBLIGHT_DEFAULT_HUE, RGBLIGHT_DEFAULT_SAT, RGBLIGHT_DEFAULT_VAL );
+    }
+
+    return state;
 }

@@ -20,6 +20,9 @@ CAPS_WORD_ENABLE = yes
 # Enable the WPM feature for our spinning cube
 WPM_ENABLE = yes
 
+# Enable the tap dance feature for multi-tap keys
+TAP_DANCE_ENABLE = yes
+
 # Add our extra source files
 SRC += render_display.c \
 	   math/math.c
