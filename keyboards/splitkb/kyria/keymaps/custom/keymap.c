@@ -33,28 +33,55 @@ typedef enum {
 typedef enum {
     TD_NUMBERS = 0,
     TD_NAVIGATE,
+    TD_SHIFT,
 } tap_dances_e;
 
 //! @brief The various states a tap dance can be in
 typedef enum {
     TDPS_NONE,
     TDPS_HOLD,
+    TDPS_SINGLE_TAP,
     TDPS_DOUBLE_TAP,
 } tap_dance_press_state_e ;
 
+//! @brief The type of action to use
+typedef enum {
+    TDA_NONE,
+    TDA_KEYCODE,
+    TDA_LAYER_MO,
+    TDA_LAYER_TO,
+    TDA_CAPS_WORD,
+} tap_dance_action_e;
+
+//! @brief The state of our press and configuration
 typedef struct {
     tap_dance_press_state_e pressState;
-    uint8_t holdLayer;
-    uint8_t permLayer;
+
+    tap_dance_action_e holdAction;
+    uint16_t holdKeyCode;
+
+    tap_dance_action_e singleTapAction;
+    uint16_t singleTapKeyCode;
+
+    tap_dance_action_e doubleTapAction;
+    uint16_t doubleTapKeyCode;
+
+    tap_dance_action_e heldAction;
+    uint16_t heldKeyCode;
+
 } tap_dance_press_state_t;
+
+#define TAP_DANCE_PRESS_STATE( _HoldAction, _HoldKC, _SingleTapAction, _SingleTapKC, _DoubleTapAction, _DoubleTapKC ) \
+    { TDPS_NONE, _HoldAction, _HoldKC, _SingleTapAction, _SingleTapKC, _DoubleTapAction, _DoubleTapKC, TDA_NONE, KC_NO }
 
 //! @brief The active states of our tap dance
 static tap_dance_press_state_t tap_dance_states[] = {
-    { TDPS_NONE, _NUMBERS, _NUMBERS_PERM },
-    { TDPS_NONE, _NAVIGATE, _NAVIGATE_PERM },
+    [TD_NUMBERS] =  TAP_DANCE_PRESS_STATE( TDA_LAYER_MO, _NUMBERS, TDA_LAYER_MO, _NUMBERS, TDA_LAYER_TO, _NUMBERS_PERM ),
+    [TD_NAVIGATE] = TAP_DANCE_PRESS_STATE( TDA_LAYER_MO, _NAVIGATE, TDA_LAYER_MO, _NAVIGATE, TDA_LAYER_TO, _NAVIGATE_PERM ),
+    [TD_SHIFT] =    TAP_DANCE_PRESS_STATE( TDA_KEYCODE, KC_LSFT, TDA_KEYCODE, KC_ESC, TDA_CAPS_WORD, KC_NO ),
 };
 
-#define ACTION_TAP_DANCE_LAYER( _TapDance ) \
+#define ACTION_TAP_DANCE( _TapDance ) \
     { \
         .fn = { NULL, tap_dance_finished, tap_dance_reset }, \
         .user_data = &tap_dance_states[ _TapDance ] \
@@ -72,8 +99,8 @@ static tap_dance_press_state_t tap_dance_states[] = {
 
 //! @{
 //! @brief Mod-tap keys
-#define CTL_ESC     MT(MOD_LCTL, KC_ESC)
-#define CTL_QUO     MT(MOD_RCTL, KC_QUOTE)
+#define SFT_ESC     TD(TD_SHIFT)
+#define SFT_QUO     MT(MOD_RSFT, KC_QUOTE)
 //! @}
 
 //! @{
@@ -84,8 +111,9 @@ void tap_dance_reset( tap_dance_state_t* state, void* userData );
 
 // clang-format off
 tap_dance_action_t tap_dance_actions[] = {
-    ACTION_TAP_DANCE_LAYER( TD_NUMBERS ),
-    ACTION_TAP_DANCE_LAYER( TD_NAVIGATE ),
+    ACTION_TAP_DANCE( TD_NUMBERS ),
+    ACTION_TAP_DANCE( TD_NAVIGATE ),
+    ACTION_TAP_DANCE( TD_SHIFT ),
 };
 // clang-format on
 
@@ -107,8 +135,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
     [_BASE] = LAYOUT(
         KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   ,                                     KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_BSPC,
-        CTL_ESC, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   ,                                     KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, CTL_QUO,
-        KC_LSFT, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   , L_MEDIA, _______, KC_DEL , L_FUNCN, KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_RSFT,
+        SFT_ESC, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   ,                                     KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, SFT_QUO,
+        KC_LCTL, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   , L_MEDIA, _______, KC_DEL , L_FUNCN, KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_RCTL,
                                    KC_LALT, KC_LGUI, L_NUMBR, KC_SPC , L_NAVIG, KC_ENT , KC_SPC , L_SYMBL, KC_RGUI, KC_RALT
     ),
 /*
@@ -343,13 +371,46 @@ bool oled_task_user( void )
     return false;
 }
 
+//! @brief Trigger a tap dance action
+void tap_dance_action( tap_dance_press_state_t* state, tap_dance_action_e action, uint16_t keycode )
+{
+    switch( action )
+    {
+        case TDA_KEYCODE:
+            register_code16( keycode );
+            break;
+        case TDA_LAYER_MO:
+            layer_on( keycode );
+            break;
+        case TDA_LAYER_TO:
+            layer_move( keycode );
+            break;
+        case TDA_CAPS_WORD:
+            caps_word_on();
+            break;
+        // Do nothing
+        case TDA_NONE:
+            break;
+    }
+
+    state->heldAction = action;
+    state->heldKeyCode = keycode;
+}
+
 //! @brief Callback for when a tap dance has finished
 void tap_dance_finished( tap_dance_state_t* state, void* userData )
 {
     tap_dance_press_state_t* const pressState = (tap_dance_press_state_t*) userData;
     if( state->count == 1u )
     {
-        pressState->pressState = TDPS_HOLD;
+        if( state->pressed )
+        {
+            pressState->pressState = TDPS_HOLD;
+        }
+        else
+        {
+            pressState->pressState = TDPS_SINGLE_TAP;
+        }
     }
     else if( state->count == 2u )
     {
@@ -363,13 +424,16 @@ void tap_dance_finished( tap_dance_state_t* state, void* userData )
     switch( pressState->pressState )
     {
         case TDPS_HOLD:
-            layer_on( pressState->holdLayer );
+            tap_dance_action( pressState, pressState->holdAction, pressState->holdKeyCode );
+            break;
+        case TDPS_SINGLE_TAP:
+            tap_dance_action( pressState, pressState->singleTapAction, pressState->singleTapKeyCode );
             break;
         case TDPS_DOUBLE_TAP:
-            layer_move( pressState->permLayer );
+            tap_dance_action( pressState, pressState->doubleTapAction, pressState->doubleTapKeyCode );
             break;
+        // Do nothing
         case TDPS_NONE:
-            // Do nothing
             break;
     }
 }
@@ -379,14 +443,28 @@ void tap_dance_reset( tap_dance_state_t* state, void* userData )
 {
     tap_dance_press_state_t* const pressState = (tap_dance_press_state_t*) userData;
 
-    // If it was a single tap - turn off the layer
-    if( pressState->pressState == TDPS_HOLD )
+    switch( pressState->heldAction )
     {
-        layer_off( pressState->holdLayer );
+        case TDA_KEYCODE:
+            unregister_code16( pressState->heldKeyCode );
+            break;
+        case TDA_LAYER_MO:
+            if( !state->pressed )
+            {
+                layer_off( pressState->heldKeyCode );
+            }
+            break;
+        // Do nothing
+        case TDA_LAYER_TO:
+        case TDA_CAPS_WORD:
+        case TDA_NONE:
+            break;
     }
 
     // Reset the state
     pressState->pressState = TDPS_NONE;
+    pressState->heldKeyCode = KC_NO;
+    pressState->heldAction = TDA_NONE;
 }
 
 //! @brief Callback for when we switch layers
