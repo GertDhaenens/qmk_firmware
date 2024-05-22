@@ -62,12 +62,12 @@ static tap_dance_press_state_t tap_dance_states[] = {
 
 //! @{
 //! @brief Layer Switching
-#define BASE        TO( _BASE )
-#define SYMBOLS     MO( _SYMBOLS )
-#define NUMBERS     TD( TD_NUMBERS )
-#define NAVIGAT     TD( TD_NAVIGATE )
-#define FUNCTIO     MO( _FUNCTION )
-#define MEDIA       MO( _MEDIA )
+#define L_BASE      TO( _BASE )
+#define L_SYMBL     MO( _SYMBOLS )
+#define L_NUMBR     TD( TD_NUMBERS )
+#define L_NAVIG     TD( TD_NAVIGATE )
+#define L_FUNCN     MO( _FUNCTION )
+#define L_MEDIA     MO( _MEDIA )
 //! @}
 
 //! @{
@@ -108,8 +108,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT(
         KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   ,                                     KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_BSPC,
         CTL_ESC, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   ,                                     KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, CTL_QUO,
-        KC_LSFT, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   , MEDIA  , _______, KC_DEL , FUNCTIO, KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_RSFT,
-                                   KC_LALT, KC_LGUI, NUMBERS, KC_SPC , NAVIGAT, KC_ENT , KC_SPC , SYMBOLS, KC_RGUI, KC_RALT
+        KC_LSFT, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   , L_MEDIA, _______, KC_DEL , L_FUNCN, KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_RSFT,
+                                   KC_LALT, KC_LGUI, L_NUMBR, KC_SPC , L_NAVIG, KC_ENT , KC_SPC , L_SYMBL, KC_RGUI, KC_RALT
     ),
 /*
  * Symbols Layer
@@ -147,14 +147,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
     [_NUMBERS] = LAYOUT(
       KC_GRV , KC_1   , KC_2   , KC_3   , KC_4   , KC_5   ,                                     KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , KC_BSLS,
-      _______, _______, _______, _______, _______, _______,                                     KC_PLUS, KC_MINS, KC_LCBR, KC_LCBR, _______, _______,
+      _______, _______, _______, _______, _______, _______,                                     KC_PLUS, KC_MINS, KC_LCBR, KC_RCBR, _______, _______,
       _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
                                  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______
     ),
 
     [_NUMBERS_PERM] = LAYOUT(
       _______, KC_1   , KC_2   , KC_3   , KC_4   , KC_5   ,                                     KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , KC_BSPC,
-      BASE   , _______, _______, _______, _______, _______,                                     _______, _______, _______, _______, _______, _______,
+      L_BASE , _______, _______, _______, _______, _______,                                     _______, _______, _______, _______, _______, _______,
       _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
                                  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______
     ),
@@ -180,7 +180,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
     [_NAVIGATE_PERM] = LAYOUT(
       _______, _______, _______, _______, _______, _______,                                     _______, _______, _______, _______, _______, KC_DEL ,
-      BASE   , _______, _______, _______, _______, _______,                                     KC_LEFT, KC_DOWN, KC_UP  , KC_RGHT, _______, _______,
+      L_BASE , _______, _______, _______, _______, _______,                                     KC_LEFT, KC_DOWN, KC_UP  , KC_RGHT, _______, _______,
       _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
                                  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______
     ),
@@ -200,7 +200,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
     [_FUNCTION] = LAYOUT(
       _______, _______, KC_F1  , KC_F2  , KC_F3  , KC_F4  ,                                     _______, _______, _______, _______, _______, _______,
-      BASE   , _______, KC_F5  , KC_F6  , KC_F7  , KC_F8  ,                                     _______, _______, _______, _______, _______, _______,
+      L_BASE , _______, KC_F5  , KC_F6  , KC_F7  , KC_F8  ,                                     _______, _______, _______, _______, _______, _______,
       _______, _______, KC_F9  , KC_F10 , KC_F11 , KC_F12 , _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
                                  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______
     ),
@@ -404,4 +404,33 @@ layer_state_t layer_state_set_user( layer_state_t state )
     }
 
     return state;
+}
+
+//! @brief Callback for caps word functionality
+bool caps_word_press_user( uint16_t keycode )
+{
+    // Return true to keep caps word enabled,
+    // Return false to disable caps word
+    // If a key should be modified, use `add_weak_mods`
+
+    switch (keycode)
+    {
+        // Keys to be shifted
+        case KC_A ... KC_Z:
+        case KC_MINS:
+            add_weak_mods(MOD_BIT(KC_LSFT));
+            return true;
+
+        // Keys to not shift but keep caps word enabled
+        case KC_1 ... KC_0:
+        case KC_BSPC:
+        case KC_DEL:
+        case KC_UNDS:
+        case L_NUMBR:
+            return true;
+
+        // All other keys disable caps word
+        default:
+            return false;
+    }
 }
