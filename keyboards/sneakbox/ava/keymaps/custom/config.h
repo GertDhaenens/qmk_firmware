@@ -15,3 +15,6 @@
  */
 
 #pragma once
+
+// Enable Caps Word by double tapping left shift
+#define DOUBLE_TAP_SHIFT_TURNS_ON_CAPS_WORD
