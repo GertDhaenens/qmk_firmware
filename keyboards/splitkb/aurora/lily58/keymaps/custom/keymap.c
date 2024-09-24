@@ -28,37 +28,117 @@ extern void render_mod_status_ctrl_shift( uint8_t modifiers );
 //! @}
 
 //! @brief The various layers of our keyboard layout
-enum layers {
-    LAYER_DEFAULT = 0,
-    LAYER_SYMBOLS = 1,
-    LAYER_FUNCTIONS = 2,
-    LAYER_ADJUST = 3,
+typedef enum {
+    _BASE = 0,
+    _SYMBOLS = 1,
+    _FUNCTIONS = 2,
+    _ADJUST = 3,
+} layers_e;
+
+//! @brief The various tap dances we support
+typedef enum {
+    TD_SHIFT = 0,
+} tap_dances_e;
+
+//! @brief The various states a tap dance can be in
+typedef enum {
+    TDPS_NONE,
+    TDPS_HOLD,
+    TDPS_SINGLE_TAP,
+    TDPS_DOUBLE_TAP,
+} tap_dance_press_state_e ;
+
+//! @brief The type of action to use
+typedef enum {
+    TDA_NONE,
+    TDA_KEYCODE,
+    TDA_LAYER_MO,
+    TDA_LAYER_TO,
+    TDA_CAPS_WORD,
+} tap_dance_action_e;
+
+//! @brief The state of our press and configuration
+typedef struct {
+    tap_dance_press_state_e pressState;
+
+    tap_dance_action_e holdAction;
+    uint16_t holdKeyCode;
+
+    tap_dance_action_e singleTapAction;
+    uint16_t singleTapKeyCode;
+
+    tap_dance_action_e doubleTapAction;
+    uint16_t doubleTapKeyCode;
+
+    tap_dance_action_e heldAction;
+    uint16_t heldKeyCode;
+
+} tap_dance_press_state_t;
+
+#define TAP_DANCE_PRESS_STATE( _HoldAction, _HoldKC, _SingleTapAction, _SingleTapKC, _DoubleTapAction, _DoubleTapKC ) \
+    { TDPS_NONE, _HoldAction, _HoldKC, _SingleTapAction, _SingleTapKC, _DoubleTapAction, _DoubleTapKC, TDA_NONE, KC_NO }
+
+//! @brief The active states of our tap dance
+static tap_dance_press_state_t tap_dance_states[] = {
+    [TD_SHIFT] =    TAP_DANCE_PRESS_STATE( TDA_KEYCODE, KC_LSFT, TDA_KEYCODE, KC_ESC, TDA_CAPS_WORD, KC_NO ),
 };
+
+#define ACTION_TAP_DANCE( _TapDance ) \
+    { \
+        .fn = { NULL, tap_dance_finished, tap_dance_reset }, \
+        .user_data = &tap_dance_states[ _TapDance ] \
+    }
+
+//! @{
+//! @brief Layer Switching
+#define L_BASE      TO( _BASE )
+#define L_SYMBL     MO( _SYMBOLS )
+#define L_FUNCN     MO( _FUNCTIONS )
+//! @}
+
+//! @{
+//! @brief Mod-tap keys
+#define SFT_ESC     TD(TD_SHIFT)
+#define SFT_QUO     MT(MOD_RSFT, KC_QUOTE)
+//! @}
+
+//! @{
+//! @brief Forward declarations of functions
+void tap_dance_finished( tap_dance_state_t* state, void* userData );
+void tap_dance_reset( tap_dance_state_t* state, void* userData );
+//! @}
+
+// clang-format off
+tap_dance_action_t tap_dance_actions[] = {
+    ACTION_TAP_DANCE( TD_SHIFT ),
+};
+// clang-format on
+
 
 //! @brief The bindings of keys of our various layers
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-    [LAYER_DEFAULT] = LAYOUT(
-        KC_GRV , KC_1   , KC_2   , KC_3   , KC_4   , KC_5   ,                   KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , _______,
+    [_BASE] = LAYOUT(
+        KC_GRV , KC_1   , KC_2   , KC_3   , KC_4   , KC_5   ,                   KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , KC_MINS,
         KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   ,                   KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_BSLS,
-        LSFT_T(KC_ESC), KC_A, KC_S, KC_D  , KC_F   , KC_G   ,                   KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, RSFT_T(KC_QUOT),
+        SFT_ESC, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   ,                   KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, SFT_QUO,
         KC_LCTL, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   , KC_DEL , _______, KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_RCTL,
-                                   KC_LALT, KC_LGUI, MO(2)  , KC_SPACE, KC_SPACE,MO(1) , KC_RGUI, KC_RALT
+                                   KC_LALT, KC_LGUI, L_SYMBL, KC_SPACE, KC_SPACE, L_FUNCN, KC_RGUI, KC_RALT
     ),
-    [LAYER_SYMBOLS] = LAYOUT(
+    [_SYMBOLS] = LAYOUT(
+        _______, _______, _______, _______, _______, _______,                   _______, _______, _______, _______, _______, KC_EQL ,
+        _______, _______, _______, _______, _______, _______,                   _______, _______, _______, _______, KC_LCBR, KC_RCBR,
         _______, _______, _______, _______, _______, _______,                   _______, _______, _______, _______, _______, _______,
-        _______, KC_EXLM, KC_AT  , KC_HASH, KC_DLR , KC_PERC,                   KC_CIRC, KC_AMPR, KC_ASTR, KC_LCBR, KC_RCBR, KC_PIPE,
-        _______, KC_TILD, KC_LBRC, KC_RBRC, KC_MINS, KC_PLUS,                   KC_EQL , KC_UNDS, KC_LPRN, KC_RPRN, KC_COLN, KC_DQUO,
-        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_LABK, KC_RABK, KC_QUES, _______,
-                                   _______, _______, MO(3)  , KC_BSPC, _______, _______, _______, _______
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+                                   _______, _______, _______, _______, KC_ENT , _______, _______, _______
     ),
-    [LAYER_FUNCTIONS] = LAYOUT(
+    [_FUNCTIONS] = LAYOUT(
         KC_F1  , KC_F2  , KC_F3  , KC_F4  , KC_F5  , KC_F6  ,                   KC_F7  , KC_F8  , KC_F9  , KC_F10 , KC_F11 , KC_F12 ,
-        _______, _______, _______, _______, _______, _______,                   _______, _______, _______, _______, _______, _______,
+        _______, _______, _______, _______, _______, _______,                   _______, _______, _______, _______, KC_LBRC, KC_RBRC,
         _______, _______, KC_END , KC_PGUP, KC_PGDN, KC_HOME,                   KC_LEFT, KC_DOWN, KC_UP  , KC_RIGHT,_______, _______,
         _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-                                   _______, _______, _______, _______, KC_ENT , MO(3)  , _______, _______
+                                   _______, _______, _______, KC_BSPC, _______, _______, _______, _______
     ),
-    [LAYER_ADJUST] = LAYOUT(
+    [_ADJUST] = LAYOUT(
         _______, _______, _______, _______, _______, _______,                   _______, _______, _______, _______, _______, _______,
         _______, _______, _______, _______, _______, _______,                   _______, _______, _______, _______, _______, _______,
         _______, _______, _______, _______, _______, _______,                   _______, _______, _______, _______, _______, _______,
@@ -183,5 +263,129 @@ void housekeeping_task_user( void )
     if( is_keyboard_master() )
     {
         transaction_rpc_send( USER_SYNC_A, sizeof( key_down_counter ), &key_down_counter );
+    }
+}
+
+//! @brief Trigger a tap dance action
+void tap_dance_action( tap_dance_press_state_t* state, tap_dance_action_e action, uint16_t keycode )
+{
+    switch( action )
+    {
+        case TDA_KEYCODE:
+            register_code16( keycode );
+            break;
+        case TDA_LAYER_MO:
+            layer_on( keycode );
+            break;
+        case TDA_LAYER_TO:
+            layer_move( keycode );
+            break;
+        case TDA_CAPS_WORD:
+            caps_word_on();
+            break;
+        // Do nothing
+        case TDA_NONE:
+            break;
+    }
+
+    state->heldAction = action;
+    state->heldKeyCode = keycode;
+}
+
+//! @brief Callback for when a tap dance has finished
+void tap_dance_finished( tap_dance_state_t* state, void* userData )
+{
+    tap_dance_press_state_t* const pressState = (tap_dance_press_state_t*) userData;
+    if( state->count == 1u )
+    {
+        if( state->pressed )
+        {
+            pressState->pressState = TDPS_HOLD;
+        }
+        else
+        {
+            pressState->pressState = TDPS_SINGLE_TAP;
+        }
+    }
+    else if( state->count == 2u )
+    {
+        pressState->pressState = TDPS_DOUBLE_TAP;
+    }
+    else
+    {
+        pressState->pressState = TDPS_NONE;
+    }
+
+    switch( pressState->pressState )
+    {
+        case TDPS_HOLD:
+            tap_dance_action( pressState, pressState->holdAction, pressState->holdKeyCode );
+            break;
+        case TDPS_SINGLE_TAP:
+            tap_dance_action( pressState, pressState->singleTapAction, pressState->singleTapKeyCode );
+            break;
+        case TDPS_DOUBLE_TAP:
+            tap_dance_action( pressState, pressState->doubleTapAction, pressState->doubleTapKeyCode );
+            break;
+        // Do nothing
+        case TDPS_NONE:
+            break;
+    }
+}
+
+//! @brief Callback for when our tap dance has finished
+void tap_dance_reset( tap_dance_state_t* state, void* userData )
+{
+    tap_dance_press_state_t* const pressState = (tap_dance_press_state_t*) userData;
+
+    switch( pressState->heldAction )
+    {
+        case TDA_KEYCODE:
+            unregister_code16( pressState->heldKeyCode );
+            break;
+        case TDA_LAYER_MO:
+            if( !state->pressed )
+            {
+                layer_off( pressState->heldKeyCode );
+            }
+            break;
+        // Do nothing
+        case TDA_LAYER_TO:
+        case TDA_CAPS_WORD:
+        case TDA_NONE:
+            break;
+    }
+
+    // Reset the state
+    pressState->pressState = TDPS_NONE;
+    pressState->heldKeyCode = KC_NO;
+    pressState->heldAction = TDA_NONE;
+}
+
+//! @brief Callback for caps word functionality
+bool caps_word_press_user( uint16_t keycode )
+{
+    // Return true to keep caps word enabled,
+    // Return false to disable caps word
+    // If a key should be modified, use `add_weak_mods`
+
+    switch (keycode)
+    {
+        // Keys to be shifted
+        case KC_A ... KC_Z:
+        case KC_MINS:
+            add_weak_mods(MOD_BIT(KC_LSFT));
+            return true;
+
+        // Keys to not shift but keep caps word enabled
+        case KC_1 ... KC_0:
+        case KC_BSPC:
+        case KC_DEL:
+        case KC_UNDS:
+            return true;
+
+        // All other keys disable caps word
+        default:
+            return false;
     }
 }
